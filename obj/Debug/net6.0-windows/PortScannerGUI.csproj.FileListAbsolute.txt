@@ -1,0 +1,14 @@
+C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net6.0-windows\PortScannerGUI.exe
+C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net6.0-windows\PortScannerGUI.deps.json
+C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net6.0-windows\PortScannerGUI.runtimeconfig.json
+C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net6.0-windows\PortScannerGUI.dll
+C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net6.0-windows\PortScannerGUI.pdb
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.AssemblyInfoInputs.cache
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.AssemblyInfo.cs
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.csproj.CoreCompileInputs.cache
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.dll
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\refint\PortScannerGUI.dll
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.pdb
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\PortScannerGUI.genruntimeconfig.cache
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net6.0-windows\ref\PortScannerGUI.dll

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Copiar el script scanPorts.Ps1 al directorio de salida -->
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="scanPorts.Ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <PackageReference Include="iText7" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>
