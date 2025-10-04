@@ -59,3 +59,4 @@ C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net8.0-windows\runtimes\win-x86
 C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net8.0-windows\PortScannerGUI.csproj.AssemblyReference.cache
 C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net8.0-windows\PortScan.EBA315A2.Up2Date
 C:\Users\Maxima\Desktop\PortScannerGUI\bin\Debug\net8.0-windows\scanPorts.Ps1
+C:\Users\Maxima\Desktop\PortScannerGUI\obj\Debug\net8.0-windows\PortScannerGUI.sourcelink.json

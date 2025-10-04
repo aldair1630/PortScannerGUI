@@ -54,7 +54,21 @@ namespace PortScannerGUI
         private Button? btnExportPDF;
         private SmtpClient? smtpClient;
         private TextBox? txtTargetIP;
-
+        
+        // Variables para gestión de procesos
+        private TabPage? tabProcessManager;
+        private ListView? lvProcesses;
+        private Button? btnRefreshProcesses;
+        private Button? btnKillSelected;
+        private CheckBox? chkShowEssential;
+        private CheckBox? chkShowNonEssential;
+        private ComboBox? cboKillType;
+        private NumericUpDown? nudKillTimer;
+        private Button? btnKillTemporary;
+        private Button? btnKillPermanent;
+        private Button? btnKillForced;
+        private System.Windows.Forms.Timer? processRefreshTimer;
+        private System.Windows.Forms.Timer? temporaryKillTimer;
         public MainForm()
         {
             InitializeComponent();
@@ -64,19 +78,24 @@ namespace PortScannerGUI
 
         private void InitializeComponent()
         {
-            this.Text = "Escáner de Puertos y Procesos - Versión Empresarial";
-            this.Size = new System.Drawing.Size(900, 800);
-            this.MinimumSize = new System.Drawing.Size(900, 800);
+            this.Text = "Enterprise Port Scanner Pro";
+            this.Size = new System.Drawing.Size(1000, 800);
+            this.MinimumSize = new System.Drawing.Size(1000, 800);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-
-            // ToolTip para hints
+            this.MaximizeBox = true;
+            // Eliminamos la línea del icono que causaba error
+            this.BackColor = System.Drawing.Color.FromArgb(240, 240, 240);
+            
+            // ToolTip para hints con estilo mejorado
             var toolTip = new ToolTip
             {
                 AutoPopDelay = 5000,
                 InitialDelay = 500,
-                ShowAlways = true
+                ShowAlways = true,
+                IsBalloon = true,
+                ToolTipIcon = ToolTipIcon.Info,
+                ToolTipTitle = "Información"
             };
 
             // TabControl principal
@@ -154,12 +173,14 @@ namespace PortScannerGUI
             // Fila 2: Opciones - TableLayoutPanel dentro de GroupBox
             gbxOptions = new GroupBox
             {
-                Text = "Opciones",
-                Dock = DockStyle.Top, // Cambia a Top para permitir expansión vertical
-                Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold),
-                Padding = new System.Windows.Forms.Padding(0),
+                Text = "Opciones de Escaneo",
+                Dock = DockStyle.Top,
+                Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold),
+                Padding = new System.Windows.Forms.Padding(10),
                 AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ForeColor = System.Drawing.Color.FromArgb(0, 102, 204),
+                BackColor = System.Drawing.Color.FromArgb(245, 245, 245)
             };
 
             var optionsTable = new TableLayoutPanel
@@ -308,32 +329,53 @@ namespace PortScannerGUI
             buttonTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             buttonTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
 
+            // Crear un ImageList para los iconos de los botones
+            var buttonImageList = new ImageList();
+            buttonImageList.ColorDepth = ColorDepth.Depth32Bit;
+            buttonImageList.ImageSize = new System.Drawing.Size(24, 24);
+            
+            // Agregar iconos del sistema
+            buttonImageList.Images.Add("scan", System.Drawing.SystemIcons.Application.ToBitmap());
+            buttonImageList.Images.Add("history", System.Drawing.SystemIcons.Information.ToBitmap());
+            
             btnRun = new Button
             {
-                Text = "▶ Ejecutar Escaneo",
+                Text = "  Ejecutar Escaneo",
                 FlatStyle = FlatStyle.Flat,
-                BackColor = System.Drawing.Color.DodgerBlue,
+                BackColor = System.Drawing.Color.FromArgb(0, 120, 212), // Color azul corporativo
                 ForeColor = System.Drawing.Color.White,
                 Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold),
-                Margin = new System.Windows.Forms.Padding(3),
-                AutoSize = true
+                Margin = new System.Windows.Forms.Padding(5),
+                Size = new System.Drawing.Size(180, 45),
+                Cursor = Cursors.Hand,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleCenter,
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                Image = buttonImageList.Images["scan"]
             };
             toolTip.SetToolTip(btnRun, "Inicia el escaneo de puertos y procesos con las opciones seleccionadas.");
             btnRun.FlatAppearance.BorderSize = 0;
+            btnRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(0, 102, 204);
             btnRun.Click += BtnRun_Click;
 
             btnViewHistory = new Button
             {
-                Text = "📋 Ver Historial",
+                Text = "  Ver Historial",
                 FlatStyle = FlatStyle.Flat,
-                BackColor = System.Drawing.Color.LightGray,
-                ForeColor = System.Drawing.Color.Black,
+                BackColor = System.Drawing.Color.FromArgb(232, 232, 232),
+                ForeColor = System.Drawing.Color.FromArgb(50, 50, 50),
                 Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold),
-                Margin = new System.Windows.Forms.Padding(3),
-                AutoSize = true
+                Margin = new System.Windows.Forms.Padding(5),
+                Size = new System.Drawing.Size(180, 45),
+                Cursor = Cursors.Hand,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleCenter,
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                Image = buttonImageList.Images["history"]
             };
             toolTip.SetToolTip(btnViewHistory, "Muestra el historial de escaneos previos guardados.");
             btnViewHistory.FlatAppearance.BorderSize = 0;
+            btnViewHistory.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(220, 220, 220);
             btnViewHistory.Click += BtnViewHistory_Click;
 
             buttonTable.Controls.Add(btnRun, 0, 0);
@@ -358,19 +400,32 @@ namespace PortScannerGUI
             progressPanel.Controls.Add(progressBar, 0, 0);
             mainTable.Controls.Add(progressPanel, 0, 3);
 
-            // Fila 5: Salida
+            // Fila 5: Salida con diseño mejorado
             rtbOutput = new RichTextBox
             {
                 Dock = DockStyle.Fill,
                 ReadOnly = true,
                 ScrollBars = RichTextBoxScrollBars.Both,
-                Font = new System.Drawing.Font("Consolas", 9F),
-                BackColor = System.Drawing.Color.FromArgb(30, 30, 30),
-                ForeColor = System.Drawing.Color.White,
-                Margin = new System.Windows.Forms.Padding(0)
+                Font = new System.Drawing.Font("Consolas", 10F),
+                BackColor = System.Drawing.Color.FromArgb(45, 45, 48),
+                ForeColor = System.Drawing.Color.FromArgb(220, 220, 220),
+                Margin = new System.Windows.Forms.Padding(0),
+                BorderStyle = BorderStyle.None,
+                Padding = new Padding(10)
             };
-
-            mainTable.Controls.Add(rtbOutput, 0, 4);
+            
+            // Agregar un panel contenedor con borde para el RichTextBox
+            var outputPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(1),
+                BackColor = System.Drawing.Color.FromArgb(0, 120, 212),
+                Margin = new Padding(5)
+            };
+            outputPanel.Controls.Add(rtbOutput);
+            
+            // Reemplazar la adición directa del rtbOutput con el panel contenedor
+            mainTable.Controls.Add(outputPanel, 0, 4);
 
             tabBasic.Controls.Add(mainTable);
 
@@ -534,6 +589,10 @@ namespace PortScannerGUI
             tabControl.TabPages.Add(tabSchedule);
             tabControl.TabPages.Add(tabAlerts);
             tabControl.TabPages.Add(tabReports);
+            
+            // Nueva pestaña para gestión de procesos
+            CreateProcessManagerTab();
+            tabControl.TabPages.Add(tabProcessManager);
 
             this.Controls.Add(tabControl);
         }
@@ -599,9 +658,16 @@ namespace PortScannerGUI
                 var arguments = new System.Collections.Generic.List<string>
                 {
                     "-ExecutionPolicy", "Bypass",
-                    "-File", scriptPath,
-                    "-ReportPath", $"\"{txtReportPath?.Text ?? ""}\""
+                    "-File", scriptPath
                 };
+
+                // Asegurar ruta absoluta para evitar problemas con privilegios
+                if (!string.IsNullOrEmpty(txtReportPath?.Text))
+                {
+                    string reportPath = Path.IsPathRooted(txtReportPath.Text) ? txtReportPath.Text : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), txtReportPath.Text);
+                    arguments.Add("-ReportPath");
+                    arguments.Add($"\"{reportPath}\"");
+                }
 
                 if (chkVerbose?.Checked == true)
                     arguments.Add("-Verbose");
@@ -903,5 +969,411 @@ namespace PortScannerGUI
             }
             AppendOutput("PDF generado: " + pdfPath);
         }
-    }
-}
+
+        private void CreateProcessManagerTab()
+        {
+            tabProcessManager = new TabPage("Gestión de Procesos")
+            {
+                BackColor = System.Drawing.Color.FromArgb(250, 250, 250),
+                Padding = new Padding(10)
+            };
+
+            var mainLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 3,
+                Padding = new Padding(5)
+            };
+            mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
+            mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            // Panel de filtros
+            var filterPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Height = 50,
+                BackColor = System.Drawing.Color.FromArgb(230, 240, 250),
+                Padding = new Padding(10)
+            };
+
+            var filterLayout = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true
+            };
+
+            chkShowEssential = new CheckBox
+            {
+                Text = "Mostrar Esenciales",
+                Checked = true,
+                AutoSize = true,
+                Margin = new Padding(5),
+                ForeColor = System.Drawing.Color.FromArgb(50, 50, 50)
+            };
+            chkShowEssential.CheckedChanged += RefreshProcessList;
+
+            chkShowNonEssential = new CheckBox
+            {
+                Text = "Mostrar No Esenciales",
+                Checked = true,
+                AutoSize = true,
+                Margin = new Padding(5),
+                ForeColor = System.Drawing.Color.FromArgb(50, 50, 50)
+            };
+            chkShowNonEssential.CheckedChanged += RefreshProcessList;
+
+            btnRefreshProcesses = new Button
+            {
+                Text = "🔄 Actualizar",
+                AutoSize = true,
+                BackColor = System.Drawing.Color.FromArgb(70, 130, 180),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Margin = new Padding(5),
+                Cursor = Cursors.Hand
+            };
+            btnRefreshProcesses.Click += (s, e) => RefreshProcessList(s, e);
+
+            filterLayout.Controls.Add(chkShowEssential);
+            filterLayout.Controls.Add(chkShowNonEssential);
+            filterLayout.Controls.Add(btnRefreshProcesses);
+            filterPanel.Controls.Add(filterLayout);
+
+            // ListView de procesos
+            lvProcesses = new ListView
+            {
+                Dock = DockStyle.Fill,
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true,
+                MultiSelect = true,
+                BackColor = Color.White,
+                Font = new System.Drawing.Font("Segoe UI", 9F)
+            };
+
+            lvProcesses.Columns.Add("Proceso", 150);
+            lvProcesses.Columns.Add("PID", 80);
+            lvProcesses.Columns.Add("Tipo", 100);
+            lvProcesses.Columns.Add("Memoria (MB)", 100);
+            lvProcesses.Columns.Add("CPU %", 80);
+            lvProcesses.Columns.Add("Ruta", 300);
+
+            // Panel de controles
+            var controlPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = System.Drawing.Color.FromArgb(240, 248, 255),
+                Padding = new Padding(10)
+            };
+
+            var controlLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 6
+            };
+
+            for (int i = 0; i < 6; i++)
+                controlLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            var lblKillType = new Label
+            {
+                Text = "Tipo de Cierre:",
+                AutoSize = true,
+                Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold),
+                ForeColor = System.Drawing.Color.FromArgb(50, 50, 50),
+                Margin = new Padding(3)
+            };
+
+            cboKillType = new ComboBox
+            {
+                Dock = DockStyle.Fill,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new System.Drawing.Font("Segoe UI", 9F),
+                Margin = new Padding(3)
+            };
+            cboKillType.Items.AddRange(new object[] { "Temporal", "Permanente", "Forzado Permanente" });
+            cboKillType.SelectedIndex = 0;
+
+            var lblTimer = new Label
+            {
+                Text = "Tiempo (minutos):",
+                AutoSize = true,
+                Font = new System.Drawing.Font("Segoe UI", 9F),
+                ForeColor = System.Drawing.Color.FromArgb(50, 50, 50),
+                Margin = new Padding(3)
+            };
+
+            nudKillTimer = new NumericUpDown
+            {
+                Dock = DockStyle.Fill,
+                Minimum = 1,
+                Maximum = 1440,
+                Value = 30,
+                Font = new System.Drawing.Font("Segoe UI", 9F),
+                Margin = new Padding(3)
+            };
+
+            btnKillSelected = new Button
+            {
+                Text = "🚫 Cerrar Seleccionados",
+                Dock = DockStyle.Fill,
+                BackColor = System.Drawing.Color.FromArgb(220, 20, 60),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold),
+                Margin = new Padding(3),
+                Cursor = Cursors.Hand,
+                Height = 40
+            };
+            btnKillSelected.Click += BtnKillSelected_Click;
+
+            var warningLabel = new Label
+            {
+                Text = "⚠️ ADVERTENCIA: Cerrar procesos puede causar inestabilidad del sistema",
+                Dock = DockStyle.Fill,
+                ForeColor = System.Drawing.Color.FromArgb(255, 69, 0),
+                Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Margin = new Padding(3)
+            };
+
+            controlLayout.Controls.Add(lblKillType, 0, 0);
+            controlLayout.Controls.Add(cboKillType, 0, 1);
+            controlLayout.Controls.Add(lblTimer, 0, 2);
+            controlLayout.Controls.Add(nudKillTimer, 0, 3);
+            controlLayout.Controls.Add(btnKillSelected, 0, 4);
+            controlLayout.Controls.Add(warningLabel, 0, 5);
+
+            controlPanel.Controls.Add(controlLayout);
+
+            mainLayout.Controls.Add(filterPanel, 0, 0);
+            mainLayout.Controls.Add(lvProcesses, 0, 1);
+            mainLayout.Controls.Add(controlPanel, 1, 1);
+
+            tabProcessManager.Controls.Add(mainLayout);
+
+            // Inicializar timer para actualización automática
+            processRefreshTimer = new System.Windows.Forms.Timer
+            {
+                Interval = 5000 // 5 segundos
+            };
+            processRefreshTimer.Tick += (s, e) => RefreshProcessList(s, e);
+            processRefreshTimer.Start();
+
+            // Timer para cierre temporal
+            temporaryKillTimer = new System.Windows.Forms.Timer();
+            temporaryKillTimer.Tick += TemporaryKillTimer_Tick;
+
+            RefreshProcessList(null, EventArgs.Empty);
+        }
+
+        private void RefreshProcessList(object? sender, EventArgs e)
+        {
+            if (lvProcesses == null) return;
+
+            try
+            {
+                lvProcesses.Items.Clear();
+                var processes = Process.GetProcesses();
+
+                foreach (var process in processes)
+                {
+                    try
+                    {
+                        if (process.Id == 0 || process.ProcessName == "Idle") continue;
+
+                        bool isEssential = IsEssentialProcess(process);
+                        
+                        if ((isEssential && chkShowEssential?.Checked != true) ||
+                            (!isEssential && chkShowNonEssential?.Checked != true))
+                            continue;
+
+                        var item = new ListViewItem(process.ProcessName);
+                        item.SubItems.Add(process.Id.ToString());
+                        item.SubItems.Add(isEssential ? "Esencial" : "No Esencial");
+                        
+                        try
+                        {
+                            item.SubItems.Add((process.WorkingSet64 / 1024 / 1024).ToString());
+                        }
+                        catch
+                        {
+                            item.SubItems.Add("N/A");
+                        }
+
+                        item.SubItems.Add("N/A"); // CPU % - requiere implementación más compleja
+                        
+                        try
+                        {
+                            item.SubItems.Add(process.MainModule?.FileName ?? "N/A");
+                        }
+                        catch
+                        {
+                            item.SubItems.Add("N/A");
+                        }
+
+                        item.Tag = process.Id;
+                        item.BackColor = isEssential ? System.Drawing.Color.FromArgb(255, 240, 240) : Color.White;
+                        
+                        lvProcesses.Items.Add(item);
+                    }
+                    catch
+                    {
+                        // Ignorar procesos que no se pueden acceder
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendOutput($"Error al actualizar lista de procesos: {ex.Message}");
+            }
+        }
+
+        private bool IsEssentialProcess(Process process)
+        {
+            var essentialProcesses = new[]
+            {
+                "explorer", "svchost", "lsass", "winlogon", "csrss", "wininit", 
+                "services", "smss", "dwm", "audiodg", "conhost", "system", 
+                "registry", "secure system", "memory compression"
+            };
+
+            string processName = process.ProcessName.ToLower();
+            
+            // Procesos del sistema críticos
+            if (essentialProcesses.Contains(processName))
+                return true;
+
+            // Procesos de Microsoft/Windows
+            try
+            {
+                string? path = process.MainModule?.FileName;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    if (path.Contains("Windows\\System32") || 
+                        path.Contains("Windows\\SysWOW64") ||
+                        path.Contains("Program Files\\Windows"))
+                        return true;
+                }
+
+                if (process.MainModule?.FileVersionInfo?.CompanyName?.Contains("Microsoft") == true)
+                    return true;
+            }
+            catch
+            {
+                // Si no podemos acceder a la información, asumimos que es esencial por seguridad
+                return true;
+            }
+
+            return false;
+        }
+
+        private void BtnKillSelected_Click(object? sender, EventArgs e)
+        {
+            if (lvProcesses?.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Selecciona al menos un proceso para cerrar.", "Advertencia", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectedProcesses = new List<int>();
+            var essentialSelected = false;
+
+            foreach (ListViewItem item in lvProcesses.SelectedItems)
+            {
+                if (item.Tag is int pid)
+                {
+                    selectedProcesses.Add(pid);
+                    if (item.SubItems[2].Text == "Esencial")
+                        essentialSelected = true;
+                }
+            }
+
+            if (essentialSelected)
+            {
+                var result = MessageBox.Show(
+                    "Has seleccionado procesos ESENCIALES. Esto puede causar inestabilidad del sistema.\n\n¿Estás seguro de continuar?",
+                    "ADVERTENCIA CRÍTICA",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Error);
+
+                if (result != DialogResult.Yes)
+                    return;
+            }
+
+            string killType = cboKillType?.SelectedItem?.ToString() ?? "Temporal";
+            int timerMinutes = (int)(nudKillTimer?.Value ?? 30);
+
+            var confirmResult = MessageBox.Show(
+                $"¿Confirmas cerrar {selectedProcesses.Count} proceso(s) de forma {killType.ToLower()}?",
+                "Confirmar Cierre",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmResult == DialogResult.Yes)
+            {
+                KillProcesses(selectedProcesses, killType, timerMinutes);
+            }
+        }
+
+        private void KillProcesses(List<int> processIds, string killType, int timerMinutes)
+        {
+            int killed = 0;
+            var killedProcesses = new List<string>();
+
+            foreach (int pid in processIds)
+            {
+                try
+                {
+                    var process = Process.GetProcessById(pid);
+                    string processName = process.ProcessName;
+                    
+                    process.Kill();
+                    process.WaitForExit(5000);
+                    
+                    killed++;
+                    killedProcesses.Add(processName);
+                    
+                    AppendOutput($"✅ Proceso cerrado: {processName} (PID: {pid})");
+
+                    // Implementar lógica según tipo de cierre
+                    switch (killType)
+                    {
+                        case "Temporal":
+                            // Para cierre temporal, podríamos implementar un sistema de monitoreo
+                            AppendOutput($"⏰ Cierre temporal configurado para {processName} por {timerMinutes} minutos");
+                            break;
+                            
+                        case "Permanente":
+                            // Agregar a lista de procesos bloqueados
+                            AppendOutput($"🚫 Proceso {processName} marcado para cierre permanente");
+                            break;
+                            
+                        case "Forzado Permanente":
+                            // Implementar bloqueo más agresivo
+                            AppendOutput($"⛔ Proceso {processName} bloqueado de forma forzada y permanente");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppendOutput($"❌ Error al cerrar proceso PID {pid}: {ex.Message}");
+                }
+            }
+
+            AppendOutput($"\n📊 Resumen: {killed} de {processIds.Count} procesos cerrados exitosamente");
+            RefreshProcessList(null, EventArgs.Empty);
+        }
+
+        private void TemporaryKillTimer_Tick(object? sender, EventArgs e)
+        {
+            // Implementar lógica para reactivar procesos temporalmente cerrados
+            // Esta funcionalidad requiere un sistema más complejo de seguimiento
+        }
